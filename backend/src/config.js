@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const config = {
   port: Number(process.env.PORT) || 4000,
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  clientOrigin: process.env.CLIENT_ORIGIN || 'http://127.0.0.1:3000',
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || '',
   openaiApiKey: process.env.OPENAI_API_KEY || '',

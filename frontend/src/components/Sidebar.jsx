@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   PenLine,
   LayoutGrid,
@@ -6,6 +8,7 @@ import {
   Users,
   PanelLeftClose,
   PanelLeftOpen,
+  LogOut,
 } from 'lucide-react';
 import { CURRENT_USER, NAV_ITEMS } from '../constants';
 
@@ -21,9 +24,34 @@ function letter(name) {
   return String(name || 'Y').trim().charAt(0).toUpperCase();
 }
 
-export default function Sidebar({ active, onNavigate, collapsed, onToggle, currentUser }) {
+export default function Sidebar({ active, onNavigate, collapsed, onToggle, currentUser, onSignOut }) {
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
   const groups = [...new Set(NAV_ITEMS.map((item) => item.group))];
   const user = currentUser || CURRENT_USER;
+
+  useEffect(() => {
+    if (!confirmSignOut) return undefined;
+    function handleKeyDown(event) {
+      if (event.key === 'Escape' && !signingOut) setConfirmSignOut(false);
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmSignOut, signingOut]);
+
+  async function confirmAndSignOut() {
+    setSigningOut(true);
+    setSignOutError('');
+    try {
+      await onSignOut();
+      setConfirmSignOut(false);
+    } catch (error) {
+      setSignOutError(error.message);
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -73,8 +101,65 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle, curre
               <span>{user.role || 'On the desk'}</span>
             </div>
           )}
+          <button
+            type="button"
+            className="sidebar-logout"
+            onClick={() => {
+              setSignOutError('');
+              setConfirmSignOut(true);
+            }}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
+      {confirmSignOut && createPortal(
+        <div
+          className="confirm-overlay is-open"
+          onClick={() => {
+            if (!signingOut) setConfirmSignOut(false);
+          }}
+        >
+          <section
+            className="confirm-card"
+            onClick={(event) => event.stopPropagation()}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="sign-out-title"
+            aria-describedby="sign-out-description"
+          >
+            <div className="confirm-mark" aria-hidden>
+              <LogOut size={18} />
+            </div>
+            <h3 id="sign-out-title">Sign out of Project Desk?</h3>
+            <p id="sign-out-description">
+              Are you sure you want to sign out? You will need to sign in again to access your workspace.
+            </p>
+            {signOutError && <div className="alert error" role="alert">{signOutError}</div>}
+            <div className="confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmSignOut(false)}
+                disabled={signingOut}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-solid"
+                onClick={confirmAndSignOut}
+                disabled={signingOut}
+              >
+                {signingOut ? 'Signing out…' : 'Sign out'}
+              </button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      )}
     </aside>
   );
 }

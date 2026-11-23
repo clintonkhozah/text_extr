@@ -185,7 +185,8 @@ export default function App() {
 
   async function handleSignOut() {
     const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) setError(signOutError.message);
+    if (signOutError) throw signOutError;
+    setError('');
   }
 
   function runAction(action) {
@@ -316,6 +317,7 @@ export default function App() {
         collapsed={!navOpen}
         onToggle={toggleNav}
         currentUser={currentUser}
+        onSignOut={handleSignOut}
       />
       <div className="main">
         <Topbar view={view} />
@@ -450,9 +452,6 @@ export default function App() {
             </>
           )}
         </div>
-        <button type="button" className="sign-out-button" onClick={handleSignOut}>
-          Sign out
-        </button>
       </div>
     </div>
   );
