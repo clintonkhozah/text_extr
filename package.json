@@ -7,6 +7,7 @@
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
     "dev:api": "npm run dev --prefix backend",
     "dev:web": "npm run dev --prefix frontend",
+    "dev:netlify": "npx netlify-cli dev --context production",
     "start:api": "npm start --prefix backend",
     "build:web": "npm run build --prefix frontend"
   }

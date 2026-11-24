@@ -25,6 +25,15 @@ Tasks require a project. A task may have one registered person or group as its a
 
 The browser and backend use only the publishable key. Every API data request carries the signed-in user's access token; the backend verifies it and queries Supabase under that user so Row Level Security applies. Never put a Supabase secret/service-role key in the frontend or these environment files.
 
+### Local development with Netlify environment variables
+
+To use the environment values already configured for your Netlify site, link this checkout to that site and run Netlify Dev instead of the separate API/UI commands:
+
+1. Run `npx netlify-cli login` and `npx netlify-cli link` from the repository root.
+2. Run `npm run dev:netlify` and open `http://localhost:8888`.
+
+Netlify Dev loads the linked site's production-context variables and runs the frontend with the local `/api/*` function. If `frontend/.env.local` exists, leave `VITE_API_URL` empty in it so API requests use that local function. The Supabase URL and publishable key are public client configuration; private values such as `OPENAI_API_KEY` remain in the function environment and are not sent to the browser. Do not copy a Supabase secret/service-role key into any `VITE_` variable.
+
 The migration keeps legacy rows that cannot safely be assigned to an Auth user hidden by RLS. Assign a legacy project's/task's `user_id` to the intended Auth user before migrating old data into the new workflow. The legacy `documents` table is not dropped, but its API is disabled and browser roles cannot access it.
 
 ## Netlify deployment
