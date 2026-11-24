@@ -27,6 +27,16 @@ The browser and backend use only the publishable key. Every API data request car
 
 The migration keeps legacy rows that cannot safely be assigned to an Auth user hidden by RLS. Assign a legacy project's/task's `user_id` to the intended Auth user before migrating old data into the new workflow. The legacy `documents` table is not dropped, but its API is disabled and browser roles cannot access it.
 
+## Netlify deployment
+
+The root `netlify.toml` builds the frontend and packages the Express API as a Netlify Function. Netlify serves the frontend and `/api/*` from the same site; no separate backend host is required.
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for the build. Leave `VITE_API_URL` unset in production so the frontend calls the same-site `/api/*` function.
+
+Set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `CLIENT_ORIGIN`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, and `OPENAI_API_KEY` in the Netlify Functions environment scope. `CLIENT_ORIGIN` should be the deployed site URL. Only `OPENAI_API_KEY` is a secret; keep it out of build scope and the browser bundle. Do not set `PORT` for the function.
+
+The Supabase URL and publishable key are public client configuration. Do not mark them as secrets in Netlify, because the frontend bundle intentionally contains their `VITE_` equivalents. The OpenAI key must remain secret and available only to Functions.
+
 ## Workflow
 
 1. Upload a document or enter brief text. The authenticated app sends the extraction text to the backend; when `OPENAI_API_KEY` is configured, the backend sends it to the selected OpenAI model. The uploaded file itself is not stored. The current PDF preview uses demo text rather than parsing PDF bytes.
