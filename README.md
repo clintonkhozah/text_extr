@@ -40,6 +40,8 @@ The migration keeps legacy rows that cannot safely be assigned to an Auth user h
 
 The root `netlify.toml` builds the frontend and packages the Express API as a Netlify Function. Netlify serves the frontend and `/api/*` from the same site; no separate backend host is required.
 
+Function runtime dependencies are declared in the repository-root `package.json` so Netlify includes them in the function bundle.
+
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for the build. Leave `VITE_API_URL` unset in production so the frontend calls the same-site `/api/*` function.
 
 Set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `CLIENT_ORIGIN`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, and `OPENAI_API_KEY` in the Netlify Functions environment scope. `CLIENT_ORIGIN` should be the deployed site URL. Only `OPENAI_API_KEY` is a secret; keep it out of build scope and the browser bundle. Do not set `PORT` for the function.

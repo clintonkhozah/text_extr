@@ -9,9 +9,23 @@ alter table public.people add column if not exists type text not null default 'p
 alter table public.tasks add column if not exists user_id uuid references auth.users(id) on delete cascade;
 alter table public.tasks add column if not exists assignee_id uuid;
 
-alter table public.projects alter column client_id drop not null;
-alter table public.people alter column client_id drop not null;
-alter table public.tasks alter column client_id drop not null;
+do $$
+declare
+  target_table text;
+begin
+  foreach target_table in array array['projects', 'people', 'tasks'] loop
+    if exists (
+      select 1
+      from information_schema.columns as c
+      where c.table_schema = 'public'
+        and c.table_name = target_table
+        and c.column_name = 'client_id'
+    ) then
+      execute format('alter table public.%I alter column client_id drop not null', target_table);
+    end if;
+  end loop;
+end
+$$;
 
 create unique index if not exists projects_id_user_id_key on public.projects (id, user_id);
 create unique index if not exists people_id_user_id_key on public.people (id, user_id);
