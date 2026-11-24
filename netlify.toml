@@ -6,6 +6,19 @@
 [functions]
   directory = "backend/netlify/functions"
   node_bundler = "esbuild"
+  external_node_modules = [
+    "@supabase/supabase-js",
+    "cors",
+    "dotenv",
+    "express",
+    "mammoth",
+    "pdf-parse",
+    "serverless-http",
+    "swagger-jsdoc",
+    "swagger-ui-express",
+    "uuid",
+    "zod"
+  ]
 
 [dev]
   command = "npm run dev --prefix frontend -- --host 127.0.0.1 --port 3001"
