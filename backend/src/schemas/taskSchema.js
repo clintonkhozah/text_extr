@@ -16,7 +16,7 @@ const ExtractedTaskSchema = z.object({
 const ExtractionResultSchema = z.object({
   tasks: z.array(ExtractedTaskSchema),
   notes: z.array(z.string()).default([]),
-  source: z.enum(['llm', 'mock']).optional(),
+  source: z.literal('llm').optional(),
 });
 
 const ReviewDecisionSchema = z.object({

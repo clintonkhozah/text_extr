@@ -1,11 +1,16 @@
 const express = require('express');
 const { z } = require('zod');
 const { extractTasks, refineTask } = require('../services/llmExtractor');
+const { extractDocumentText } = require('../services/documentText');
 
 const router = express.Router();
 
 const BodySchema = z.object({
-  text: z.string().min(10, 'Message text is required'),
+  text: z.string().max(60000).default(''),
+  documents: z.array(z.object({
+    name: z.string().min(1).max(255),
+    contentBase64: z.string().min(1),
+  })).max(5).default([]),
 });
 
 /**
@@ -13,7 +18,7 @@ const BodySchema = z.object({
  * /api/extract:
  *   post:
  *     tags: [Extraction]
- *     summary: Extract tasks from unstructured client text via LLM (or mock)
+ *     summary: Extract text from supplied documents and identify tasks with the configured LLM
  *     requestBody:
  *       required: true
  *       content:
@@ -24,20 +29,33 @@ const BodySchema = z.object({
  *             properties:
  *               text:
  *                 type: string
- *                 example: We need the new university course pages reviewed before the end of the month...
+ *               documents:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [name, contentBase64]
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     contentBase64:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Structured extraction result for human review
  *       400:
- *         description: Invalid request body
+ *         description: Invalid request body or unsupported document
+ *       503:
+ *         description: ChatGPT API is not configured
  */
 router.post('/extract', async (req, res, next) => {
   try {
     const body = BodySchema.parse(req.body);
-    const result = await extractTasks(body.text);
+    const sourceText = await extractDocumentText(body.documents, body.text);
+    const result = await extractTasks(sourceText);
 
     res.json({
       extractedAt: new Date().toISOString(),
+      sourceText,
       ...result,
       reviewRequired: true,
       message: 'Review and approve tasks before saving. Nothing has been persisted yet.',

@@ -10,6 +10,7 @@ import AuthView from './views/AuthView';
 import { supabase, supabaseConfigured } from './supabase';
 import {
   addPerson,
+  askAgent,
   approveTasks,
   createProject,
   createTask,
@@ -170,7 +171,13 @@ export default function App() {
     setAuthMessage('');
     try {
       const result = mode === 'sign-up'
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: 'https://textxx.netlify.app/',
+            },
+          })
         : await supabase.auth.signInWithPassword({ email, password });
       if (result.error) throw result.error;
       if (mode === 'sign-up' && !result.data.session) {
@@ -209,21 +216,24 @@ export default function App() {
     });
   }
 
-  async function handleExtract(sourceText = text) {
-    const payload = (sourceText || text || '').trim();
-    setText(payload);
+  async function handleExtract(input = { text }) {
+    const payload = typeof input === 'string'
+      ? { text: input }
+      : { text: input?.text || '', documents: input?.documents || [] };
+    setText(payload.text);
     setError('');
     setSuccess('');
     setExtracting(true);
     try {
       const result = await extractTasks(payload);
       setTasks(withEditDefaults(result.tasks || []));
-      setSource(result.source || 'mock');
-      setError((result.notes || []).join(' '));
+      setSource(result.source || null);
+      return result;
     } catch (extractError) {
       setTasks([]);
       setSource(null);
       setError(extractError.message);
+      return null;
     } finally {
       setExtracting(false);
     }
@@ -260,10 +270,10 @@ export default function App() {
         tasks: approved.map((task) => ({
           projectId: task.editedProjectId !== undefined ? task.editedProjectId : activeProjectId,
           status: task.editedStatus || 'incoming',
-          description: task.description,
-          owner: task.owner || null,
-          deadline: task.deadline || null,
-          priority: task.priority || null,
+          description: task.editedDescription || task.description,
+          owner: task.editedOwner ?? task.owner ?? null,
+          deadline: task.editedDeadline ?? task.deadline ?? null,
+          priority: task.editedPriority ?? task.priority ?? null,
           confidence: task.confidence,
           evidence: task.evidence,
           unknowns: task.unknowns || [],
@@ -326,7 +336,7 @@ export default function App() {
             view === 'saved' ? 'content-board' : ''
           }`}
         >
-          {error && <div className="alert error app-error" role="alert">{error}</div>}
+          {error && view !== 'extract' && <div className="alert error app-error" role="alert">{error}</div>}
           {dataLoading ? (
             <div className="data-loading" role="status">Loading your workspace…</div>
           ) : (
@@ -335,7 +345,7 @@ export default function App() {
                 <ChatView
                   text={text}
                   loading={extracting}
-                  error=""
+                  error={error}
                   source={source}
                   tasks={tasks}
                   saving={saving}
@@ -345,7 +355,7 @@ export default function App() {
                   people={people}
                   onTextChange={setText}
                   onExtract={handleExtract}
-                  onAskAgent={() => ({ reply: 'Use the project board and Data page to review saved work.' })}
+                  onAskAgent={(messages) => askAgent(messages)}
                   onToggle={handleToggle}
                   onChange={handleChange}
                   onSendToData={handleSendToData}

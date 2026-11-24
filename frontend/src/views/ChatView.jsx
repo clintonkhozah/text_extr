@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Paperclip,
   Send,
@@ -16,60 +16,18 @@ import {
   ScanText,
   MessagesSquare,
 } from 'lucide-react';
-import { SAMPLE_MESSAGE } from '../constants';
 import { ExtractCard, ExtractLoader, ExtractedText } from '../components/extract/ExtractPanel';
 
-const DEMO_CV_EXTRACTION = `DEMO PREVIEW — this is sample display text, not the contents of the uploaded CV.
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+const SUPPORTED_FILE = /\.(pdf|docx|txt|md|csv)$/i;
 
-Professional profile
-This section would present a concise overview of the candidate's background and the type of roles they are seeking. The summary should reflect only details found in the document and should avoid adding unsupported claims.
-
-Security operations
-Extracted information in this section could include security monitoring responsibilities, alert triage, incident escalation, and the way findings are recorded. Each item would be linked to the source wording so it can be checked before being used.
-
-Technical support
-This section could summarize support activities such as investigating reported issues, documenting resolutions, communicating progress, and escalating problems that need specialist attention. Specific systems, tools, and service levels would only be included if the CV states them.
-
-Skills and tools
-Relevant technical skills, platforms, and tools would be listed here as separate, editable details. Related information can be grouped for readability while keeping the original meaning intact.
-
-Education and certifications
-Qualifications, training, and certifications would be shown with their names and dates when those details are present. Missing dates or other unstated information would remain blank rather than being inferred.
-
-Review notes
-This long placeholder demonstrates how an extracted document preview can be edited. Replace it with verified extracted text before relying on any details.`;
-
-function looksBinary(text) {
-  const head = String(text || '').slice(0, 80);
-  return head.includes('%PDF') || /[\x00-\x08\x0E-\x1F]/.test(head);
-}
-
-function combineSource(files, notes) {
-  const parts = [];
-  files.forEach((file) => {
-    const binary = looksBinary(file.content) || /\.pdf$/i.test(file.name);
-    const isClintonCv = /clinton khoza cv \(soc and support\)\.pdf/i.test(file.name);
-    parts.push(
-      binary
-        ? isClintonCv
-          ? DEMO_CV_EXTRACTION
-          : `DEMO PREVIEW — extracted text for ${file.name} is shown here when available.`
-        : file.content
-    );
-  });
-  if (notes.trim()) {
-    parts.push(notes.trim());
+async function readFileAsBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
   }
-  return parts.join('\n\n');
-}
-
-function readFileAsText(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
+  return btoa(binary);
 }
 
 function ConfirmRemove({ open, title, excerpt, body, confirmLabel = 'Remove', onCancel, onConfirm }) {
@@ -171,13 +129,13 @@ export default function ChatView({
   const [loader, setLoader] = useState(false);
   const loaderStarted = useRef(0);
   const extractedCount = tasks?.length || 0;
-  const combined = useMemo(() => combineSource(files, draft), [files, draft]);
-  const canSend = combined.trim().length >= 10 && !loading;
+  const [uploadError, setUploadError] = useState('');
+  const canSend = (draft.trim().length >= 10 || files.length > 0) && !loading;
   const activeProject = projects.find((project) => project.id === activeProjectId);
 
   useEffect(() => {
-    onTextChange(combined);
-  }, [combined, onTextChange]);
+    onTextChange(draft);
+  }, [draft, onTextChange]);
 
   useEffect(() => {
     setMode('extract');
@@ -203,16 +161,36 @@ export default function ChatView({
   async function addFiles(fileList) {
     const incoming = Array.from(fileList || []);
     if (!incoming.length) return;
-    const next = await Promise.all(
-      incoming.map(async (file) => ({
-        id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
-        name: file.name,
-        size: file.size,
-        content: /\.pdf$/i.test(file.name) ? '' : await readFileAsText(file),
-      }))
-    );
-    setFiles((prev) => [...prev, ...next]);
-    setAssignmentOpen(true);
+    setUploadError('');
+    const totalBytes = files.reduce((total, file) => total + file.size, 0)
+      + incoming.reduce((total, file) => total + file.size, 0);
+    if (files.length + incoming.length > 5) {
+      setUploadError('Upload no more than 5 documents at a time.');
+      return;
+    }
+    if (totalBytes > MAX_UPLOAD_BYTES) {
+      setUploadError('Uploaded documents must total no more than 4 MB.');
+      return;
+    }
+    const unsupported = incoming.find((file) => !SUPPORTED_FILE.test(file.name));
+    if (unsupported) {
+      setUploadError(`"${unsupported.name}" is unsupported. Upload PDF, DOCX, TXT, MD, or CSV files.`);
+      return;
+    }
+    try {
+      const next = await Promise.all(
+        incoming.map(async (file) => ({
+          id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+          name: file.name,
+          size: file.size,
+          contentBase64: await readFileAsBase64(file),
+        }))
+      );
+      setFiles((prev) => [...prev, ...next]);
+      setAssignmentOpen(true);
+    } catch (readError) {
+      setUploadError(`Could not read the selected document: ${readError.message}`);
+    }
   }
 
   function assignUploadedFiles(project = null) {
@@ -220,22 +198,36 @@ export default function ChatView({
     setAssignmentOpen(false);
   }
 
-  function handleSend() {
+  async function handleSend() {
     if (!canSend) return;
+    const documents = files.map(({ name, contentBase64 }) => ({ name, contentBase64 }));
     setLastSent({
       files: files.map((file) => ({ id: file.id, name: file.name })),
       notes: draft.trim(),
-      text: combined,
+      text: draft.trim(),
+      originalText: draft.trim(),
     });
     setShowCards(false);
-    onExtract(combined, files);
-    setFiles([]);
+    setUploadError('');
+    const result = await onExtract({ text: draft.trim(), documents });
+    if (result?.sourceText) {
+      setFiles([]);
+      setLastSent((previous) => previous
+        ? { ...previous, text: result.sourceText, originalText: result.sourceText }
+        : previous);
+    }
   }
 
-  function handleContinueToTasks() {
+  async function handleContinueToTasks() {
     const extractedText = lastSent?.text || '';
+    if (extractedText !== (lastSent?.originalText || '')) {
+      const result = await onExtract({ text: extractedText, documents: [] });
+      if (!result) return;
+      setLastSent((previous) => previous
+        ? { ...previous, text: result.sourceText, originalText: result.sourceText }
+        : previous);
+    }
     setShowCards(true);
-    onExtract(extractedText);
   }
 
   function handleExtractedTextChange(extractedText) {
@@ -268,25 +260,19 @@ export default function ChatView({
     onClear?.();
   }
 
-  function handleExtractBrief() {
-    setDraft(SAMPLE_MESSAGE);
-    setLastSent({ files: [], notes: SAMPLE_MESSAGE, text: SAMPLE_MESSAGE });
-    setShowCards(false);
-    onExtract(SAMPLE_MESSAGE, []);
-  }
-
   async function handleAsk() {
     const text = agentDraft.trim();
     if (!text || agentBusy) return;
-    const next = [...agentMessages, { role: 'user', content: text }];
+    const next = [...agentMessages, { role: 'user', content: text }].slice(-20);
     setAgentMessages(next);
     setAgentDraft('');
     setAgentBusy(true);
     try {
       const data = await onAskAgent?.(next);
+      if (!data?.reply) throw new Error('ChatGPT API returned an empty reply.');
       setAgentMessages([
         ...next,
-        { role: 'assistant', content: data?.reply || 'No reply from the register.' },
+        { role: 'assistant', content: data.reply },
       ]);
     } catch (err) {
       setAgentMessages([...next, { role: 'assistant', content: err.message }]);
@@ -323,7 +309,7 @@ export default function ChatView({
               <h1>{mode === 'agent' ? 'Agent' : 'Extract'}</h1>
               <p>
                 {mode === 'agent'
-                  ? `Ask about ${activeProject?.name || 'unassigned data'} in this visual preview.`
+                  ? `Ask about ${activeProject?.name || 'your workspace'} using its current records.`
                   : `Working in ${activeProject?.name || 'Unassigned'}. A brief in, structured data out.`}
               </p>
             </div>
@@ -389,12 +375,8 @@ export default function ChatView({
             {mode === 'extract' && emptyExtract && (
               <div className="brief-stage">
                 <article className="brief-paper">
-                  <div className="brief-kicker">Client message</div>
-                  <p>{SAMPLE_MESSAGE}</p>
-                  <button type="button" className="btn btn-ink" onClick={handleExtractBrief}>
-                    <ScanText size={14} />
-                    Extract tasks
-                  </button>
+                  <div className="brief-kicker">Start an extraction</div>
+                  <p>Paste text or attach a PDF, DOCX, TXT, MD, or CSV document to identify actionable tasks. Scanned PDFs need OCR first.</p>
                 </article>
                 <p className="brief-hint">
                   Owner, date and priority stay blank unless the brief states them. Accept the
@@ -403,7 +385,7 @@ export default function ChatView({
               </div>
             )}
 
-            {mode === 'extract' && lastSent && extractedCount === 0 && !loading && (
+            {mode === 'extract' && lastSent && !lastSent.text && extractedCount === 0 && !loading && (
               <article className="bubble user">
                 <div className="avatar user-avatar" aria-hidden>
                   <UserRound size={15} />
@@ -427,7 +409,7 @@ export default function ChatView({
               </article>
             )}
 
-            {mode === 'extract' && !loader && extractedCount > 0 && !showCards && (
+            {mode === 'extract' && !loader && lastSent?.text && !showCards && (
               <ExtractedText
                 text={lastSent?.text || ''}
                 fileName={lastSent?.files.length === 1 ? lastSent.files[0].name : undefined}
@@ -436,7 +418,7 @@ export default function ChatView({
               />
             )}
 
-            {mode === 'extract' && !loader && extractedCount > 0 && showCards && (
+            {mode === 'extract' && !loader && showCards && extractedCount > 0 && (
               <div className="extract-stack">
                 <header className="extract-lane-head">
                   <div>
@@ -473,6 +455,12 @@ export default function ChatView({
               </div>
             )}
 
+            {mode === 'extract' && !loader && showCards && extractedCount === 0 && (
+              <div className="empty">
+                No actionable tasks were found in this text. Edit the extracted text or upload another document.
+              </div>
+            )}
+
             {mode === 'extract' && success && (
               <div className="alert success" style={{ marginTop: 8 }}>
                 {success}
@@ -484,6 +472,12 @@ export default function ChatView({
                 <div className="bubble-body">
                   <p>{error}</p>
                 </div>
+              </article>
+            )}
+
+            {mode === 'extract' && uploadError && (
+              <article className="bubble bot error-bubble">
+                <div className="bubble-body"><p>{uploadError}</p></div>
               </article>
             )}
 
@@ -558,7 +552,7 @@ export default function ChatView({
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".pdf,.txt,.md,.csv,application/pdf,text/plain,text/csv"
+                  accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv"
                   aria-label="Choose a document file"
                   hidden
                   multiple
@@ -571,6 +565,7 @@ export default function ChatView({
                   className="composer-input"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  maxLength={60000}
                   placeholder={
                     files.length ? 'Add a line of instruction…' : 'Paste a brief, or attach a paper…'
                   }
@@ -600,6 +595,7 @@ export default function ChatView({
                   className="composer-input"
                   value={agentDraft}
                   onChange={(e) => setAgentDraft(e.target.value)}
+                  maxLength={4000}
                   placeholder="Ask about the board, a person, a paper, a project…"
                   rows={3}
                   onKeyDown={(e) => {

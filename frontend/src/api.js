@@ -29,10 +29,17 @@ async function request(path, options = {}) {
   return result;
 }
 
-export function extractTasks(text) {
+export function extractTasks(payload) {
   return request('/api/extract', {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(payload),
+  });
+}
+
+export function askAgent(messages) {
+  return request('/api/agent', {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
   });
 }
 

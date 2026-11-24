@@ -18,7 +18,7 @@ Tasks require a project. A task may have one registered person or group as its a
 
 1. Install dependencies with `npm run install:all`.
 2. Copy `frontend/.env.example` to `frontend/.env.local` and set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_API_URL`.
-3. Copy `backend/.env.example` to `backend/.env` and set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. Set `OPENAI_API_KEY` there if using live GPT extraction; use a rotated key and never paste it into source code or chat.
+3. Copy `backend/.env.example` to `backend/.env` and set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `OPENAI_API_KEY`. The key is required for task extraction; keep it on the backend, use a rotated key, and never paste it into source code or chat.
 4. If you already created the earlier `projects` / `people` / `tasks` tables, run `supabase/migrations/0001_authenticated_project_data.sql` in the SQL editor. For a new or empty database, run `supabase/schema.sql`.
 5. Enable Email auth in Supabase, then start the API (`npm run dev:api`) and UI (`npm run dev:web`).
 6. Create an account on the sign-in screen. New accounts may need to confirm their email first.
@@ -48,7 +48,7 @@ The Supabase URL and publishable key are public client configuration. Do not mar
 
 ## Workflow
 
-1. Upload a document or enter brief text. The authenticated app sends the extraction text to the backend; when `OPENAI_API_KEY` is configured, the backend sends it to the selected OpenAI model. The uploaded file itself is not stored. The current PDF preview uses demo text rather than parsing PDF bytes.
+1. Upload a PDF, DOCX, TXT, MD, or CSV document, or paste text. The authenticated backend extracts document text and sends it to the configured ChatGPT model. Scanned PDFs require OCR before upload. The uploaded file itself is not stored.
 2. Review and accept task candidates.
 3. Select a project before saving. If an extracted assignee is not in People & groups, add the person/group or clear the assignment.
 4. Accepted tasks appear on the board and in Data under their project.

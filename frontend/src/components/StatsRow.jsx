@@ -1,9 +1,9 @@
 import { Signal, BookType, ClipboardList, Archive } from 'lucide-react';
 
 function sourceLabel(source, health) {
-  const value = source || health?.llm || 'rules';
-  if (value === 'mock') return 'Standing rules';
-  if (value === 'llm') return 'Recorded brief';
+  const value = source || health?.llm || 'not_configured';
+  if (value === 'llm') return 'ChatGPT';
+  if (value === 'not_configured') return 'Not configured';
   return value;
 }
 

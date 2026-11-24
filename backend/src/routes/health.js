@@ -16,7 +16,7 @@ const router = express.Router();
 router.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    llm: config.hasLlm ? 'configured' : 'mock',
+    llm: config.hasLlm ? 'configured' : 'not_configured',
     database: config.hasSupabase ? 'supabase' : 'not_configured',
   });
 });

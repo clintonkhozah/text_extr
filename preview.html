@@ -99,8 +99,8 @@
       </div>
       <div class="foot">
         <span class="pill-status"><span class="dot"></span> API online</span>
-        <div>LLM: mock</div>
-        <div>DB: memory / Supabase</div>
+        <div>LLM: configured on backend</div>
+        <div>DB: Supabase</div>
       </div>
     </aside>
 
@@ -132,21 +132,19 @@
             <p>Paste a client message. Unknown owners, dates and priorities stay null — nothing is invented.</p>
           </div>
           <div class="stats">
-            <div class="card"><div class="icon g">●</div><div><div class="meta">Pipeline</div><div class="val">Healthy</div></div></div>
-            <div class="card"><div class="icon">✦</div><div><div class="meta">Extractor</div><div class="val">mock</div></div></div>
-            <div class="card"><div class="icon">✓</div><div><div class="meta">Awaiting review</div><div class="val">5</div></div></div>
+            <div class="card"><div class="icon">●</div><div><div class="meta">Pipeline</div><div class="val">Not connected</div></div></div>
+            <div class="card"><div class="icon">✦</div><div><div class="meta">Extractor</div><div class="val">ChatGPT</div></div></div>
+            <div class="card"><div class="icon">✓</div><div><div class="meta">Awaiting review</div><div class="val">0</div></div></div>
             <div class="card"><div class="icon">▣</div><div><div class="meta">Saved tasks</div><div class="val">0</div></div></div>
           </div>
           <div class="split">
             <div class="panel">
               <h2>Source message</h2>
               <p class="subtle">Unstructured text in → structured candidates out. Nothing is saved yet.</p>
-              <label>Client ID (tenant)</label>
-              <input value="demo-client" readonly />
               <label>Message</label>
-              <textarea readonly>We need the new university course pages reviewed before the end of the month. Sarah will provide the final approved copy. The website team needs to check all application links and confirm that the mobile layout works. The reporting team should also investigate why application conversions have dropped. The links are urgent, but the reporting issue needs investigating before we decide what to change.</textarea>
+              <textarea placeholder="Paste text from a brief or document…"></textarea>
               <div class="row">
-                <span class="subtle" style="margin:0">Mode: <strong>mock</strong></span>
+                <span class="subtle" style="margin:0">Mode: <strong>ChatGPT</strong></span>
                 <button class="btn btn-primary" data-view="review">Extract tasks →</button>
               </div>
             </div>
@@ -156,9 +154,7 @@
                 <span class="badge" style="color:var(--green-dark);background:var(--green-soft);border-color:#b7ebce">PREVIEW</span>
               </div>
               <p class="subtle">Accuracy checks surface here.</p>
-              <div class="note">Owner for course-page review is not stated — left null.</div>
-              <div class="note">Priority for links taken from “urgent”; reporting treated as high because it blocks decisions.</div>
-              <div class="note">Deadlines kept as relative phrases when no calendar date is given.</div>
+              <div class="note">Upload a PDF, DOCX, TXT, MD, or CSV document to extract its text.</div>
               <div class="code">POST /api/extract
 → reviewRequired: true
 → tasks[].owner | deadline | priority
@@ -172,92 +168,20 @@
             <h1>Review &amp; approve</h1>
             <p>Human-in-the-loop gate. Approve only what is accurate — rejected items never reach the database.</p>
           </div>
-          <div class="row">
-            <span></span>
-            <div style="display:flex;gap:10px">
-              <button class="btn btn-secondary">Approve all</button>
-              <button class="btn btn-primary" data-view="saved">Save approved (3)</button>
-            </div>
-          </div>
-
-          <div class="task ok">
-            <div class="row">
-              <p class="title">1. Check all application links</p>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-secondary">Approve</button>
-                <button class="btn btn-danger">Reject</button>
-              </div>
-            </div>
-            <div class="pills">
-              <span class="pill">Owner: website team</span>
-              <span class="pill unk">Deadline: unknown</span>
-              <span class="pill urgent">urgent</span>
-              <span class="pill">Confidence 92%</span>
-            </div>
-            <p class="ev">Evidence: “The website team needs to check all application links” and “The links are urgent”</p>
-          </div>
-
-          <div class="task ok">
-            <div class="row">
-              <p class="title">2. Provide the final approved copy for the university course pages</p>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-secondary">Approve</button>
-                <button class="btn btn-danger">Reject</button>
-              </div>
-            </div>
-            <div class="pills">
-              <span class="pill">Owner: Sarah</span>
-              <span class="pill unk">Deadline: unknown</span>
-              <span class="pill unk">Priority unknown</span>
-              <span class="pill">Confidence 90%</span>
-            </div>
-            <p class="ev">Evidence: “Sarah will provide the final approved copy.”</p>
-          </div>
-
-          <div class="task">
-            <div class="row">
-              <p class="title">3. Review the new university course pages</p>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-secondary">Approve</button>
-                <button class="btn btn-danger">Reject</button>
-              </div>
-            </div>
-            <div class="pills">
-              <span class="pill unk">Owner: unknown</span>
-              <span class="pill">Deadline: before the end of the month</span>
-              <span class="pill unk">Priority unknown</span>
-            </div>
-            <p class="ev">Unknowns left null: owner, priority</p>
-          </div>
+          <div class="panel">No extracted tasks are waiting for review.</div>
         </section>
 
         <section class="view" id="saved">
           <div class="page">
             <h1>Saved tasks</h1>
-            <p>Approved tasks for client <strong>demo-client</strong>. Queries are tenant-scoped.</p>
+            <p>Approved tasks from your workspace.</p>
           </div>
           <div class="panel">
             <div class="row" style="margin-bottom:12px">
-              <h2 style="margin:0">Experience on main</h2>
-              <span class="subtle" style="margin:0">3 items</span>
+              <h2 style="margin:0">Saved tasks</h2>
+              <span class="subtle" style="margin:0">0 items</span>
             </div>
-            <div style="border-left:1px solid var(--border); margin-left:6px; padding-left:18px; display:grid; gap:18px">
-              <div>
-                <div class="row"><strong>Check all application links</strong><span class="subtle" style="margin:0">No deadline</span></div>
-                <div class="subtle">website team · approved · urgent</div>
-                <div class="pills"><span class="pill urgent">urgent</span><span class="pill">Batch a1b2c3d4</span></div>
-              </div>
-              <div>
-                <div class="row"><strong>Provide final approved copy</strong><span class="subtle" style="margin:0">No deadline</span></div>
-                <div class="subtle">Sarah · approved</div>
-                <div class="pills"><span class="pill">Batch a1b2c3d4</span></div>
-              </div>
-              <div>
-                <div class="row"><strong>Investigate conversion drop</strong><span class="subtle" style="margin:0">No deadline</span></div>
-                <div class="subtle">reporting team · approved · high</div>
-                <div class="pills"><span class="pill high">high</span></div>
-              </div>
-            </div>
+            <div>No tasks have been saved.</div>
           </div>
         </section>
 
@@ -269,7 +193,7 @@
           <div class="split">
             <div class="panel">
               <h2>What I built first</h2>
-              <div class="note"><strong>Schema-first extraction.</strong> Zod validates LLM JSON; invalid shapes fall back to mock.</div>
+              <div class="note"><strong>Schema-first extraction.</strong> Invalid model responses are reported and not replaced with sample output.</div>
               <div class="note"><strong>Nulls over guesses.</strong> Missing fields stay null and are labelled unknowns.</div>
               <div class="note"><strong>Approval is mandatory.</strong> Only <code>approved: true</code> tasks are saved.</div>
               <div class="note"><strong>Tenant key.</strong> Every save/list/export requires <code>clientId</code>.</div>

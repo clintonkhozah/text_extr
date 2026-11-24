@@ -1,5 +1,4 @@
-import { Play, RotateCcw } from 'lucide-react';
-import { SAMPLE_MESSAGE } from '../constants';
+import { Play } from 'lucide-react';
 
 export default function ExtractView({
   text,
@@ -9,7 +8,6 @@ export default function ExtractView({
   source,
   onTextChange,
   onExtract,
-  onLoadSample,
 }) {
   return (
     <>
@@ -21,9 +19,6 @@ export default function ExtractView({
             priorities stay blank — nothing is invented.
           </p>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={onLoadSample}>
-          <RotateCcw size={14} /> Load sample message
-        </button>
       </div>
 
       <div className="layout-split">
@@ -37,7 +32,7 @@ export default function ExtractView({
             className="textarea"
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
-            placeholder={SAMPLE_MESSAGE}
+            placeholder="Paste text from a brief or document…"
           />
 
           <div className="row spread" style={{ marginTop: 14 }}>

@@ -20,8 +20,8 @@ export default function ApproachView() {
           </p>
           <div className="notes">
             <div className="note">
-              <strong>Schema-first extraction.</strong> Zod validates LLM JSON. Invalid shapes fall
-              back to a deterministic mock instead of crashing or inventing fields.
+              <strong>Schema-first extraction.</strong> Zod validates the model response. Invalid
+              responses are reported instead of being replaced with invented data.
             </div>
             <div className="note">
               <strong>Nulls over guesses.</strong> Missing owner / deadline / priority stay null and
@@ -55,8 +55,8 @@ export default function ApproachView() {
               one registered person or group. Data is the project-grouped task view, not a second copy.
             </div>
             <div className="note">
-              <strong>Source files:</strong> uploads are extraction-only inputs. The app persists
-              accepted structured task fields and evidence, not the uploaded file.
+              <strong>Source files:</strong> PDF, DOCX, TXT, MD, and CSV uploads are parsed for
+              extraction only. The app persists accepted task fields and evidence, not the file.
             </div>
             <div className="note">
               <strong>Before launch:</strong> golden-message regression tests, contract tests for

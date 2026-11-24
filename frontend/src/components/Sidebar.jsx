@@ -10,7 +10,7 @@ import {
   PanelLeftOpen,
   LogOut,
 } from 'lucide-react';
-import { CURRENT_USER, NAV_ITEMS } from '../constants';
+import { NAV_ITEMS } from '../constants';
 
 const ICONS = {
   extract: PenLine,
@@ -21,7 +21,7 @@ const ICONS = {
 };
 
 function letter(name) {
-  return String(name || 'Y').trim().charAt(0).toUpperCase();
+  return String(name || '?').trim().charAt(0).toUpperCase();
 }
 
 export default function Sidebar({ active, onNavigate, collapsed, onToggle, currentUser, onSignOut }) {
@@ -29,7 +29,7 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle, curre
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState('');
   const groups = [...new Set(NAV_ITEMS.map((item) => item.group))];
-  const user = currentUser || CURRENT_USER;
+  const user = currentUser || {};
 
   useEffect(() => {
     if (!confirmSignOut) return undefined;
@@ -92,13 +92,11 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle, curre
 
       <div className="sidebar-foot">
         <div className="session-user" title={user.email || user.name}>
-          <span className="profile-orb" aria-hidden>
-            {letter(user.name)}
-          </span>
+          <span className="profile-orb" aria-hidden>{letter(user.name)}</span>
           {!collapsed && (
             <div className="session-copy">
               <strong>{user.name}</strong>
-              <span>{user.role || 'On the desk'}</span>
+              <span>{user.role || ''}</span>
             </div>
           )}
           <button

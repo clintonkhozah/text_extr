@@ -57,71 +57,6 @@ const LANES = [
   { id: 'done', label: 'Done', tone: 'green' },
 ];
 
-const SAMPLE_PROJECTS = [
-  { id: 'proj-course', name: 'University course pages' },
-  { id: 'proj-apps', name: 'Application conversion' },
-];
-
-const SAMPLE_PEOPLE = [
-  { id: 'p1', name: 'Sarah Chen' },
-  { id: 'p2', name: 'Website team' },
-  { id: 'p3', name: 'Reporting team' },
-  { id: 'p4', name: 'Editorial' },
-];
-
-const DESK_SAMPLE = [
-  {
-    id: 'desk-1',
-    projectId: 'proj-course',
-    projectName: 'University course pages',
-    description: 'Review the new university course pages before month-end',
-    owner: 'Sarah Chen',
-    deadline: 'End of month',
-    priority: 'high',
-    status: 'incoming',
-  },
-  {
-    id: 'desk-2',
-    projectId: 'proj-apps',
-    projectName: 'Application conversion',
-    description: 'Confirm every application link on the mobile layout',
-    owner: 'Website team',
-    deadline: 'This week',
-    priority: 'urgent',
-    status: 'in_progress',
-  },
-  {
-    id: 'desk-3',
-    projectId: 'proj-course',
-    projectName: 'University course pages',
-    description: 'Supply final approved copy for course pages',
-    owner: 'Sarah Chen',
-    deadline: null,
-    priority: 'medium',
-    status: 'waiting',
-  },
-  {
-    id: 'desk-4',
-    projectId: 'proj-apps',
-    projectName: 'Application conversion',
-    description: 'Investigate the drop in application conversions',
-    owner: 'Reporting team',
-    deadline: 'Before next change',
-    priority: 'high',
-    status: 'incoming',
-  },
-  {
-    id: 'desk-5',
-    projectId: 'proj-course',
-    projectName: 'University course pages',
-    description: 'Record last month’s published programme pages',
-    owner: 'Editorial',
-    deadline: 'Complete',
-    priority: 'low',
-    status: 'done',
-  },
-];
-
 function laneFor(status) {
   if (status === 'in_progress') return 'in_progress';
   if (status === 'waiting' || status === 'blocked') return 'waiting';
@@ -749,9 +684,6 @@ export default function SavedView({
   onRenameProject,
   onDeleteProject,
 }) {
-  const [desk, setDesk] = useState(DESK_SAMPLE);
-  const [deskProjects, setDeskProjects] = useState(SAMPLE_PROJECTS);
-  const [deskPeople, setDeskPeople] = useState(SAMPLE_PEOPLE);
   const [activeProject, setActiveProject] = useState('all');
   const [openTaskId, setOpenTaskId] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -769,13 +701,9 @@ export default function SavedView({
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
 
-  const usingDesk = !Array.isArray(tasks);
-  const items = usingDesk ? desk : tasks;
-  const projectList = usingDesk ? deskProjects : projects;
-  const peopleList = useMemo(
-    () => usingDesk ? deskPeople : people,
-    [usingDesk, deskPeople, people]
-  );
+  const items = Array.isArray(tasks) ? tasks : [];
+  const projectList = projects;
+  const peopleList = people;
 
   const visible = useMemo(() => {
     let next = items;
@@ -817,9 +745,7 @@ export default function SavedView({
   }
 
   function patchLocal(taskId, patch) {
-    const apply = (list) => list.map((task) => (task.id === taskId ? { ...task, ...patch } : task));
-    if (usingDesk) setDesk(apply);
-    else onUpdate?.(taskId, patch);
+    onUpdate?.(taskId, patch);
   }
 
   function handleDragStart(event, taskId) {
@@ -831,22 +757,12 @@ export default function SavedView({
     event.preventDefault();
     const taskId = event.dataTransfer.getData('text/task-id');
     if (!taskId) return;
-    if (usingDesk) {
-      setDesk((prev) =>
-        prev.map((task) => (task.id === taskId ? { ...task, status: laneId } : task))
-      );
-      return;
-    }
     onMove?.(taskId, laneId);
   }
 
   function removeTask(taskId) {
     closeSheet();
     setConfirm(null);
-    if (usingDesk) {
-      setDesk((prev) => prev.filter((task) => task.id !== taskId));
-      return;
-    }
     onDelete?.(taskId);
   }
 
@@ -865,28 +781,12 @@ export default function SavedView({
     const description = draftText.trim();
     if (!description) return;
     const project = activeProject === 'all' ? projectList[0] : currentProject;
-    if (usingDesk) {
-      setDesk((prev) => [
-        {
-          id: `desk-${Date.now()}`,
-          projectId: project?.id || null,
-          projectName: project?.name || null,
-          description,
-          owner: null,
-          deadline: null,
-          priority: 'medium',
-          status: laneId,
-        },
-        ...prev,
-      ]);
-    } else {
-      await onCreate?.({
-        description,
-        status: laneId,
-        projectId: project?.id || undefined,
-        projectName: project?.name || undefined,
-      });
-    }
+    await onCreate?.({
+      description,
+      status: laneId,
+      projectId: project?.id || undefined,
+      projectName: project?.name || undefined,
+    });
     setDraftLane(null);
     setDraftText('');
   }
@@ -895,14 +795,8 @@ export default function SavedView({
     event.preventDefault();
     const name = newProject.trim();
     if (!name) return;
-    if (usingDesk) {
-      const id = `proj-${Date.now()}`;
-      setDeskProjects((prev) => [{ id, name }, ...prev]);
-      setActiveProject(id);
-    } else {
-      const project = await onCreateProject?.(name);
-      if (project?.id) setActiveProject(project.id);
-    }
+    const project = await onCreateProject?.(name);
+    if (project?.id) setActiveProject(project.id);
     setNewProject('');
     setProjectOpen(false);
   }
@@ -917,12 +811,7 @@ export default function SavedView({
       confirmLabel: 'Remove project',
       onConfirm: () => {
         setConfirm(null);
-        if (usingDesk) {
-          setDeskProjects((prev) => prev.filter((item) => item.id !== project.id));
-          setDesk((prev) => prev.filter((task) => task.projectId !== project.id));
-        } else {
-          onDeleteProject?.(project.id);
-        }
+        onDeleteProject?.(project.id);
         setActiveProject('all');
       },
     });

@@ -13,7 +13,7 @@ const options = {
     servers: [{ url: `http://localhost:${config.port}`, description: 'Local development' }],
     tags: [
       { name: 'System', description: 'Health and configuration' },
-      { name: 'Extraction', description: 'LLM / mock task extraction' },
+      { name: 'Extraction', description: 'Document text extraction and LLM task extraction' },
       { name: 'Tasks', description: 'Human review, persistence, and export' },
     ],
   },

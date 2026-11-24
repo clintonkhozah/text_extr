@@ -91,6 +91,7 @@ export function ExtractedText({ text, fileName, onTextChange, onContinue }) {
             <textarea
               value={editedText}
               onChange={(event) => setEditedText(event.target.value)}
+              maxLength={60000}
               rows={12}
             />
           </label>

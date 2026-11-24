@@ -7,6 +7,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { authenticate } = require('./middleware/authenticate');
 const healthRoutes = require('./routes/health');
 const extractRoutes = require('./routes/extract');
+const agentRoutes = require('./routes/agent');
 const taskRoutes = require('./routes/tasks');
 const projectRoutes = require('./routes/projects');
 
@@ -19,7 +20,7 @@ function createApp() {
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     })
   );
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '8mb' }));
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customSiteTitle: 'Task Assistant API',
@@ -29,6 +30,7 @@ function createApp() {
   app.use('/api', healthRoutes);
   app.use('/api', authenticate);
   app.use('/api', extractRoutes);
+  app.use('/api', agentRoutes);
   app.use('/api', taskRoutes);
   app.use('/api', projectRoutes);
 
