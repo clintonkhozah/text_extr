@@ -175,7 +175,7 @@ export default function App() {
             email,
             password,
             options: {
-              emailRedirectTo: 'https://textxx.netlify.app/',
+              emailRedirectTo: window.location.origin,
             },
           })
         : await supabase.auth.signInWithPassword({ email, password });
