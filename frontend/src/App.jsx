@@ -247,19 +247,23 @@ export default function App() {
     setTasks((prev) => prev.map((task, i) => (i === index ? { ...task, [field]: value } : task)));
   }
 
-  async function handleSendToData({ acceptAll = false } = {}) {
-    const approved = tasks.filter(
-      (task) => (task.approved === true || acceptAll) && !task.sentToData
-    );
+  async function handleSendToData({ acceptAll = false, taskIndexes } = {}) {
+    const selectedIndexes = taskIndexes ? new Set(taskIndexes) : null;
+    const approved = tasks.filter((task, index) => (
+      !task.sentToData
+      && (selectedIndexes
+        ? selectedIndexes.has(index)
+        : task.approved === true || acceptAll)
+    ));
     if (!approved.length) {
-      setError('Accept at least one task before adding it to Data.');
+      setError('Accept a task before saving it to the board.');
       return;
     }
     const hasUnassignedProject = approved.some((task) => (
       task.editedProjectId !== undefined ? !task.editedProjectId : !activeProjectId
     ));
     if (hasUnassignedProject) {
-      setError('Assign each accepted task to a project before adding it to Data.');
+      setError('Assign each accepted task to a project before saving it to the board.');
       return;
     }
     setSaving(true);
@@ -285,11 +289,20 @@ export default function App() {
         })),
       });
       setSaved((prev) => [...(result.tasks || []), ...prev]);
-      setTasks((prev) => prev.map((task) =>
-        task.approved === true || acceptAll
+      setPeople((prev) => {
+        const byId = new Map(prev.map((person) => [person.id, person]));
+        (result.people || []).forEach((person) => byId.set(person.id, person));
+        return [...byId.values()];
+      });
+      setTasks((prev) => prev.map((task, index) => {
+        const savedTask = selectedIndexes
+          ? selectedIndexes.has(index)
+          : task.approved === true || acceptAll;
+        return savedTask && !task.sentToData
           ? { ...task, approved: true, sentToData: true }
-          : task
-      ));
+          : task;
+      }));
+      setView('saved');
       setSuccess('');
     } catch (saveError) {
       setError(saveError.message);

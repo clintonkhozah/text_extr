@@ -52,7 +52,7 @@ The Supabase URL and publishable key are public client configuration. Do not mar
 
 1. Upload a PDF, DOCX, TXT, MD, or CSV document, or paste text. The authenticated backend extracts document text and sends it to the configured ChatGPT model. Scanned PDFs require OCR before upload. The uploaded file itself is not stored.
 2. Review and accept task candidates.
-3. Select a project before saving. If an extracted assignee is not in People & groups, add the person/group or clear the assignment.
-4. Accepted tasks appear on the board and in Data under their project.
+3. Select a project before saving. Accepting an extracted task saves it immediately; any extracted assignee not already in People & groups is created as a person.
+4. Saved tasks appear on the board and in Data under their project.
 
 The extraction preview is local and is not persisted until accepted tasks are submitted. Data persistence requires Supabase configuration and an authenticated session; the API returns explicit setup/auth errors rather than silently falling back to memory.

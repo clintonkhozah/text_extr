@@ -58,6 +58,44 @@ async function findAssigneeId(supabase, owner) {
   return person.id;
 }
 
+async function findOrCreateAssignee(supabase, userId, owner) {
+  const name = String(owner || '').trim();
+  if (!name) return { id: null, person: null };
+
+  const { data, error } = await supabase
+    .from('people')
+    .select('id, name')
+    .ilike('name', name);
+  if (error) throw storeError('assignee lookup', error);
+  const existing = (data || []).find((item) => item.name.toLowerCase() === name.toLowerCase());
+  if (existing) return { id: existing.id, person: null };
+
+  const { data: person, error: insertError } = await supabase
+    .from('people')
+    .insert({
+      id: uuidv4(),
+      user_id: userId,
+      name,
+      type: 'person',
+      status: 'Active',
+    })
+    .select('id, code, name, email, type, status, created_at')
+    .single();
+  if (insertError) throw storeError('assignee creation', insertError);
+  return {
+    id: person.id,
+    person: {
+      id: person.id,
+      code: person.code || null,
+      name: person.name,
+      email: person.email || null,
+      type: person.type || 'person',
+      status: person.status || 'Active',
+      createdAt: person.created_at,
+    },
+  };
+}
+
 async function hydrateTasks(supabase, rows) {
   if (!rows.length) return [];
   const [projectResult, peopleResult] = await Promise.all([
@@ -99,6 +137,21 @@ async function saveApprovedTasks({ supabase, userId, tasks, projectId }) {
   const batchId = uuidv4();
   const createdAt = new Date().toISOString();
   const projects = new Map();
+  const assigneeIds = new Map();
+  const createdPeople = new Map();
+  function assigneeIdFor(owner) {
+    const name = String(owner || '').trim();
+    if (!name) return Promise.resolve(null);
+    const key = name.toLowerCase();
+    if (!assigneeIds.has(key)) {
+      assigneeIds.set(key, (async () => {
+        const result = await findOrCreateAssignee(supabase, userId, name);
+        if (result.person) createdPeople.set(result.person.id, result.person);
+        return result.id;
+      })());
+    }
+    return assigneeIds.get(key);
+  }
   const rows = await Promise.all(
     approved.map(async (task) => {
       const selectedProjectId = task.projectId !== undefined ? task.projectId : projectId;
@@ -115,8 +168,7 @@ async function saveApprovedTasks({ supabase, userId, tasks, projectId }) {
         batch_id: batchId,
         user_id: userId,
         project_id: project.id,
-        assignee_id: await findAssigneeId(
-          supabase,
+        assignee_id: await assigneeIdFor(
           task.editedOwner !== undefined ? task.editedOwner : task.owner
         ),
         description,
@@ -140,6 +192,7 @@ async function saveApprovedTasks({ supabase, userId, tasks, projectId }) {
   return {
     batchId,
     projects: [...projects.values()],
+    people: [...createdPeople.values()],
     savedCount: rows.length,
     tasks: await hydrateTasks(supabase, data || rows),
   };

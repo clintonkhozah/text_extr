@@ -435,7 +435,8 @@ export default function ChatView({
                       people={people}
                       projects={projects}
                       activeProjectId={activeProjectId}
-                      onAccept={() => onToggle(index, task.approved === true ? null : true)}
+                      saving={saving}
+                      onAccept={() => onSendToData({ taskIndexes: [index] })}
                       onReject={() => onToggle(index, task.approved === false ? null : false)}
                       onPatch={(field, value) => onChange(index, field, value)}
                       onRewrite={onRewrite ? (prompt) => onRewrite(index, prompt) : undefined}
@@ -449,7 +450,7 @@ export default function ChatView({
                     disabled={saving || !tasks.length || tasks.every((task) => task.sentToData)}
                     onClick={() => onSendToData({ acceptAll: true })}
                   >
-                    Accept all &amp; add to Data
+                    Accept all &amp; add to board
                   </button>
                 </div>
               </div>

@@ -141,6 +141,7 @@ export function ExtractCard({
   people = [],
   projects = [],
   activeProjectId,
+  saving = false,
   onAccept,
   onReject,
   onPatch,
@@ -205,11 +206,11 @@ export function ExtractCard({
           </div>
         </div>
         <div className="extract-card-actions">
-          <button type="button" className={`btn btn-ghost-reject ${rejected ? 'is-on' : ''}`} onClick={onReject}>
+          <button type="button" className={`btn btn-ghost-reject ${rejected ? 'is-on' : ''}`} onClick={onReject} disabled={saving || task.sentToData}>
             <X size={13} /> Reject
           </button>
-          <button type="button" className={`btn btn-ghost-accept ${accepted ? 'is-on' : ''}`} onClick={onAccept}>
-            <Check size={13} /> {accepted ? 'Accepted' : 'Accept'}
+          <button type="button" className={`btn btn-ghost-accept ${accepted ? 'is-on' : ''}`} onClick={onAccept} disabled={saving || task.sentToData}>
+            <Check size={13} /> {task.sentToData ? 'Saved to board' : accepted ? 'Accepted' : 'Accept'}
           </button>
         </div>
       </div>
