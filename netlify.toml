@@ -19,6 +19,7 @@
     "uuid",
     "zod"
   ]
+  included_files = ["node_modules/**"]
 
 [dev]
   command = "npm run dev --prefix frontend -- --host 127.0.0.1 --port 3001"
