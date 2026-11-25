@@ -32,6 +32,46 @@ const PersonPatch = z.object({
   status: z.string().max(40).optional(),
 });
 
+/**
+ * @openapi
+ * /api/projects:
+ *   get:
+ *     tags: [Projects]
+ *     summary: List the signed-in user's projects
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Project count and project records
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ *   post:
+ *     tags: [Projects]
+ *     summary: Create a project
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 160
+ *               description:
+ *                 type: string
+ *                 maxLength: 2000
+ *     responses:
+ *       '201':
+ *         description: Created project
+ *       '400':
+ *         description: Invalid request
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ */
 router.get('/projects', async (req, res, next) => {
   try {
     const projects = await listProjects({ supabase: req.supabase });
@@ -55,6 +95,59 @@ router.post('/projects', async (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/projects/{id}:
+ *   patch:
+ *     tags: [Projects]
+ *     summary: Update a project
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 160
+ *               description:
+ *                 type: string
+ *                 maxLength: 2000
+ *     responses:
+ *       '200':
+ *         description: Updated project
+ *       '400':
+ *         description: Invalid request
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ *   delete:
+ *     tags: [Projects]
+ *     summary: Delete a project and its tasks
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Project deleted
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ */
 router.patch('/projects/:id', async (req, res, next) => {
   try {
     const body = ProjectBody.partial().parse(req.body);
@@ -78,6 +171,52 @@ router.delete('/projects/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/people:
+ *   get:
+ *     tags: [People]
+ *     summary: List the signed-in user's people and groups
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: People count and person/group records
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ *   post:
+ *     tags: [People]
+ *     summary: Add a person or group
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 80
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               type:
+ *                 type: string
+ *                 enum: [person, group]
+ *               status:
+ *                 type: string
+ *                 maxLength: 40
+ *     responses:
+ *       '201':
+ *         description: Created person or group
+ *       '400':
+ *         description: Invalid request
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ */
 router.get('/people', async (req, res, next) => {
   try {
     const people = await listPeople({ supabase: req.supabase });
@@ -101,6 +240,65 @@ router.post('/people', async (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/people/{id}:
+ *   patch:
+ *     tags: [People]
+ *     summary: Update a person or group
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 80
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               type:
+ *                 type: string
+ *                 enum: [person, group]
+ *               status:
+ *                 type: string
+ *                 maxLength: 40
+ *     responses:
+ *       '200':
+ *         description: Updated person or group
+ *       '400':
+ *         description: Invalid request
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ *   delete:
+ *     tags: [People]
+ *     summary: Delete a person or group
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Person or group deleted
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ */
 router.patch('/people/:id', async (req, res, next) => {
   try {
     const patch = PersonPatch.parse(req.body);

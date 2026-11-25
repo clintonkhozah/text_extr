@@ -121,7 +121,8 @@ export default function ChatView({
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [lastSent, setLastSent] = useState(null);
-  const [showCards, setShowCards] = useState(false);
+  // Restore candidate cards when navigation remounts this view after a task was saved.
+  const [showCards, setShowCards] = useState(() => Boolean(tasks?.length));
   const [confirm, setConfirm] = useState(null);
   const [agentDraft, setAgentDraft] = useState('');
   const [agentMessages, setAgentMessages] = useState([]);

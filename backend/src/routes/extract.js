@@ -19,6 +19,8 @@ const BodySchema = z.object({
  *   post:
  *     tags: [Extraction]
  *     summary: Extract text from supplied documents and identify tasks with the configured LLM
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -71,6 +73,37 @@ const RefineSchema = z.object({
   prompt: z.string().min(1).max(400),
 });
 
+/**
+ * @openapi
+ * /api/extract/refine:
+ *   post:
+ *     tags: [Extraction]
+ *     summary: Rewrite a task description using its evidence and an instruction
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [description, prompt]
+ *             properties:
+ *               description:
+ *                 type: string
+ *               evidence:
+ *                 type: string
+ *               prompt:
+ *                 type: string
+ *                 maxLength: 400
+ *     responses:
+ *       '200':
+ *         description: Refined task description
+ *       '400':
+ *         description: Invalid request
+ *       '401':
+ *         description: Missing or invalid Supabase access token
+ */
 router.post('/extract/refine', async (req, res, next) => {
   try {
     const body = RefineSchema.parse(req.body);

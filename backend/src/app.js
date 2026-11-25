@@ -6,6 +6,7 @@ const { swaggerSpec } = require('./swagger');
 const { errorHandler } = require('./middleware/errorHandler');
 const { authenticate } = require('./middleware/authenticate');
 const healthRoutes = require('./routes/health');
+const authRoutes = require('./routes/auth');
 const extractRoutes = require('./routes/extract');
 const agentRoutes = require('./routes/agent');
 const taskRoutes = require('./routes/tasks');
@@ -28,6 +29,7 @@ function createApp() {
   app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
 
   app.use('/api', healthRoutes);
+  app.use('/api', authRoutes);
   app.use('/api', authenticate);
   app.use('/api', extractRoutes);
   app.use('/api', agentRoutes);

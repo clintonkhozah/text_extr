@@ -25,6 +25,10 @@ Tasks require a project. A task may have one registered person or group as its a
 
 The browser and backend use only the publishable key. Every API data request carries the signed-in user's access token; the backend verifies it and queries Supabase under that user so Row Level Security applies. Never put a Supabase secret/service-role key in the frontend or these environment files.
 
+### Swagger API testing
+
+Open `http://localhost:4000/api/docs`, run `POST /api/auth/login` with your Supabase email and password, then copy `access_token` from the response. Click **Authorize** and paste the token without the `Bearer ` prefix. Swagger will attach it to the protected API requests. This requires `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in `backend/.env`; `OPENAI_API_KEY` is only needed for extraction. Use this login flow only on your local development server or a trusted HTTPS deployment.
+
 ### Local development with Netlify environment variables
 
 To use the environment values already configured for your Netlify site, link this checkout to that site and run Netlify Dev instead of the separate API/UI commands:
